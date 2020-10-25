@@ -46,7 +46,8 @@ type ConfigQemu struct {
 	BootDisk     string      `json:"bootdisk,omitempty"`
 	Scsihw       string      `json:"scsihw,omitempty"`
 	QemuDisks    QemuDevices `json:"disk"`
-	QemuVga      QemuDevice  `json:"vga,omitempty"`
+	/*QemuVga      QemuDevice  `json:"vga,omitempty"`*/
+        QemuVga      string      `json:"vga"`
 	QemuNetworks QemuDevices `json:"network"`
 	QemuSerials  QemuDevices `json:"serial,omitempty"`
 	HaState      string      `json:"hastate,omitempty"`
@@ -132,10 +133,13 @@ func (config ConfigQemu) CreateVm(vmr *VmRef, client *Client) (err error) {
 	config.CreateQemuDisksParams(vmr.vmId, params, false)
 
 	// Create vga config.
-	vgaParam := QemuDeviceParam{}
+	/*vgaParam := QemuDeviceParam{}
 	vgaParam = vgaParam.createDeviceParam(config.QemuVga, nil)
 	if len(vgaParam) > 0 {
 		params["vga"] = strings.Join(vgaParam, ",")
+	}*/
+	if config.QemuVga != "" {
+		params["vga"] = config.QemuVga
 	}
 
 	// Create networks config.
@@ -270,12 +274,15 @@ func (config ConfigQemu) UpdateConfig(vmr *VmRef, client *Client) (err error) {
 	config.CreateQemuNetworksParams(vmr.vmId, configParams)
 
 	// Create vga config.
-	vgaParam := QemuDeviceParam{}
+	/*vgaParam := QemuDeviceParam{}
 	vgaParam = vgaParam.createDeviceParam(config.QemuVga, nil)
 	if len(vgaParam) > 0 {
 		configParams["vga"] = strings.Join(vgaParam, ",")
 	} else {
 		deleteParams = append(deleteParams, "vga")
+	}*/
+	if config.QemuVga != "" {
+		configParams["vga"] = config.QemuVga
 	}
 
 	// Create serial interfaces
@@ -471,6 +478,10 @@ func NewConfigQemuFromApi(vmr *VmRef, client *Client) (config *ConfigQemu, err e
 	if _, isSet := vmConfig["hastate"]; isSet {
 		hastate = vmConfig["hastate"].(string)
 	}
+	vga := ""
+	if _, isSet := vmConfig["vga"]; isSet {
+		vga = vmConfig["vga"].(string)
+	}
 
 	config = &ConfigQemu{
 		Name:         name,
@@ -493,7 +504,8 @@ func NewConfigQemuFromApi(vmr *VmRef, client *Client) (config *ConfigQemu, err e
 		Scsihw:       scsihw,
 		HaState:      hastate,
 		QemuDisks:    QemuDevices{},
-		QemuVga:      QemuDevice{},
+		/*QemuVga:      QemuDevice{},*/
+                QemuVga:      vga,
 		QemuNetworks: QemuDevices{},
 		QemuSerials:  QemuDevices{},
 	}
@@ -575,13 +587,16 @@ func NewConfigQemuFromApi(vmr *VmRef, client *Client) (config *ConfigQemu, err e
 	}
 
 	//Display
-	if vga, isSet := vmConfig["vga"]; isSet {
+	/*if vga, isSet := vmConfig["vga"]; isSet {
 		vgaList := strings.Split(vga.(string), ",")
 		vgaMap := QemuDevice{}
 		vgaMap.readDeviceConfig(vgaList)
 		if len(vgaMap) > 0 {
 			config.QemuVga = vgaMap
 		}
+	}*/
+	if _, isSet := vmConfig["vga"]; isSet {
+		config.QemuVga = vmConfig["vga"].(string)
 	}
 
 	// Add networks.
